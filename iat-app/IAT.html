@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WFH vs In-Office IAT</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #fff;
+      color: #111;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 720px;
+      padding: 48px 32px;
+      text-align: center;
+    }
+    .screen.active { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    p  { font-size: 1rem; line-height: 1.6; max-width: 600px; }
+
+    button {
+      padding: 12px 32px;
+      font-size: 1rem;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    button:hover:not(:disabled) { background: #333; }
+
+    .consent-block {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+      max-width: 600px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .consent-block input[type="checkbox"] { margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* ── IAT trial screen ── */
+    #screen-trial {
+      position: fixed;
+      inset: 0;
+      max-width: none;
+      padding: 0;
+      background: #fff;
+      display: none;
+    }
+    #screen-trial.active { display: flex; }
+
+    .trial-labels {
+      position: absolute;
+      top: 24px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 48px;
+      font-size: 1.25rem;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+    .trial-labels .label-left  { text-align: left; }
+    .trial-labels .label-right { text-align: right; }
+
+    .trial-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    #stimulus {
+      font-size: 2.5rem;
+      font-weight: bold;
+      min-height: 60px;
+      text-align: center;
+    }
+    #stimulus img { max-height: 160px; max-width: 320px; }
+
+    .key-reminder {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    #error-marker {
+      font-size: 2.5rem;
+      color: red;
+      visibility: hidden;
+    }
+
+    /* ── fullscreen pause overlay ── */
+    #screen-fullscreen-lost {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.97);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 999;
+    }
+    #screen-fullscreen-lost.active { display: flex; }
+
+    /* ── break / instruction screens ── */
+    #screen-block-instruction, #screen-break { max-width: 640px; }
+
+    .key-diagram {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 560px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      max-width: 400px;
+      background: #eee;
+      border-radius: 4px;
+      height: 10px;
+    }
+    .progress-bar-fill {
+      height: 10px;
+      background: #111;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    /* ── survey ── */
+    #screen-survey {
+      max-width: 760px;
+      text-align: left;
+      gap: 28px;
+    }
+    #screen-survey h2 { text-align: center; }
+
+    .survey-section { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+
+    .survey-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .survey-table th, .survey-table td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .survey-table th:first-child, .survey-table td:first-child { text-align: left; }
+    .survey-table thead th { background: #f5f5f5; font-weight: bold; }
+
+    .radio-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-group label { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; cursor: pointer; }
+
+    .form-row { display: flex; flex-direction: column; gap: 6px; }
+    .form-row label { font-weight: bold; font-size: 0.95rem; }
+    .form-row input[type="number"],
+    .form-row input[type="text"],
+    .form-row input[type="range"] { font-size: 1rem; padding: 6px 10px; border: 1px solid #bbb; border-radius: 4px; width: 100%; max-width: 320px; }
+
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    .slider-row input[type="range"] { flex: 1; max-width: 260px; }
+    .slider-val { font-weight: bold; min-width: 24px; }
+
+    .demo-row { display: flex; gap: 24px; flex-wrap: wrap; }
+    .demo-row .form-row { flex: 1; min-width: 200px; }
+
+    .error-msg { color: red; font-size: 0.9rem; display: none; }
+    .error-msg.visible { display: block; }
+
+    /* ── done screen ── */
+    #screen-done { max-width: 600px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — WELCOME
+════════════════════════════════════════════ -->
+<div id="screen-welcome" class="screen active">
+  <h1>Work Arrangements &amp; Attitudes Study</h1>
+  <p>
+    <!-- TODO: researcher to fill in — brief study description, estimated time, who is conducting it -->
+    In this study you will complete a brief categorization task followed by a short questionnaire.
+    The entire session takes approximately 10–15 minutes.
+    There are no right or wrong answers.
+  </p>
+  <div class="consent-block">
+    <input type="checkbox" id="consent-checkbox" />
+    <label for="consent-checkbox">
+      <!-- TODO: researcher to fill in — replace with your actual IRB-approved consent statement -->
+      I have read the information above and voluntarily agree to participate in this study.
+    </label>
+  </div>
+  <button id="btn-begin" disabled>Begin</button>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — BLOCK INSTRUCTION
+════════════════════════════════════════════ -->
+<div id="screen-block-instruction" class="screen">
+  <h2 id="instr-title">Block 1 of 7</h2>
+  <p id="instr-body"></p>
+  <div class="key-diagram">
+    <span id="instr-left-label"></span>
+    <span id="instr-right-label"></span>
+  </div>
+  <p style="font-size:0.95rem; color:#555;">Press <strong>E</strong> for the category on the LEFT &nbsp;|&nbsp; Press <strong>I</strong> for the category on the RIGHT.</p>
+  <p>Press <strong>SPACE</strong> to begin.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — TRIAL (fullscreen)
+════════════════════════════════════════════ -->
+<div id="screen-trial" class="screen">
+  <div class="trial-labels">
+    <div class="label-left"  id="trial-label-left"></div>
+    <div class="label-right" id="trial-label-right"></div>
+  </div>
+  <div class="trial-center">
+    <div id="stimulus"></div>
+    <div id="error-marker">✗</div>
+    <div class="key-reminder">E = left &nbsp;&nbsp; I = right</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — FULLSCREEN LOST
+════════════════════════════════════════════ -->
+<div id="screen-fullscreen-lost">
+  <h2>Please return to fullscreen</h2>
+  <p>The study requires fullscreen mode. Click the button below to continue.</p>
+  <button id="btn-reenter-fullscreen">Return to Fullscreen</button>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — BREAK BETWEEN BLOCKS
+════════════════════════════════════════════ -->
+<div id="screen-break" class="screen">
+  <h2 id="break-title">Block complete</h2>
+  <p id="break-body"></p>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+  <button id="btn-next-block">Continue</button>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — SURVEY
+════════════════════════════════════════════ -->
+<div id="screen-survey" class="screen">
+  <h2 id="survey-page-title">Survey</h2>
+  <div id="survey-content" class="survey-section"></div>
+  <p class="error-msg" id="survey-error">Please answer all questions before continuing.</p>
+  <button id="btn-survey-next">Next</button>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — DONE
+════════════════════════════════════════════ -->
+<div id="screen-done" class="screen">
+  <h2>Thank you for participating!</h2>
+  <p>Your responses have been recorded. Please click the button below to download your data file. Once downloaded, you may close this window.</p>
+  <button id="btn-download">Download Data</button>
+  <p id="done-msg" style="display:none; color:#555;">Download complete. You may close this window.</p>
+</div>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STIMULI CONFIG
+   Each item: { type: 'text', content: '...' }
+               { type: 'image', content: 'path/or/url.png' }
+   To swap a word to an image change type to 'image' and set content
+   to the image path, e.g.:
+     { type: 'image', content: 'images/remote_work.png' }
+═══════════════════════════════════════════════════════════════ */
+const STIMULI = {
+  WFH: [
+    { type: 'text',  content: 'remote work' },
+    { type: 'text',  content: 'work from home' },
+    { type: 'text',  content: 'telework' },
+    { type: 'text',  content: 'virtual meeting' },
+    { type: 'text',  content: 'Zoom work' },
+    { type: 'text',  content: 'home office' },
+    { type: 'text',  content: 'flexible work' },
+    { type: 'text',  content: 'remote job' },
+    { type: 'image', content: 'WFH1.png' },
+    { type: 'image', content: 'WFH2.png' },
+  ],
+  InOffice: [
+    { type: 'text',  content: 'office work' },
+    { type: 'text',  content: 'in-office work' },
+    { type: 'text',  content: 'workplace' },
+    { type: 'text',  content: 'office meeting' },
+    { type: 'text',  content: 'corporate office' },
+    { type: 'text',  content: 'office desk' },
+    { type: 'text',  content: 'in-person meeting' },
+    { type: 'text',  content: 'workplace office' },
+    { type: 'image', content: 'Inoffice1.png' },
+    { type: 'image', content: 'Inoffice2.png' },
+  ],
+  Positive: [
+    { type: 'text', content: 'productive' },
+    { type: 'text', content: 'effective' },
+    { type: 'text', content: 'efficient' },
+    { type: 'text', content: 'professional' },
+    { type: 'text', content: 'focused' },
+    { type: 'text', content: 'successful' },
+    { type: 'text', content: 'reliable' },
+    { type: 'text', content: 'motivated' },
+  ],
+  Negative: [
+    { type: 'text', content: 'unproductive' },
+    { type: 'text', content: 'distracted' },
+    { type: 'text', content: 'inefficient' },
+    { type: 'text', content: 'unprofessional' },
+    { type: 'text', content: 'lazy' },
+    { type: 'text', content: 'disengaged' },
+    { type: 'text', content: 'careless' },
+    { type: 'text', content: 'unfocused' },
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   BLOCK DEFINITIONS
+   buildBlockSequence(order) returns the 7-block array for Order A or B.
+═══════════════════════════════════════════════════════════════ */
+function buildBlockSequence(order) {
+  // Order A: compatible first (WFH+Neg / Office+Pos in blocks 3&4)
+  // Order B: incompatible first (Office+Neg / WFH+Pos in blocks 3&4)
+  const isA = order === 'A';
+
+  return [
+    // Block 1 — target practice
+    {
+      blockNumber: 1,
+      blockLabel:  isA ? 'Practice: WFH / In-Office' : 'Practice: In-Office / WFH',
+      blockType:   'practice',
+      totalTrials: 24,
+      labelLeft:   isA ? 'WFH' : 'In-Office',
+      labelRight:  isA ? 'In-Office' : 'WFH',
+      categorySets: isA
+        ? [ { category: 'WFH',      side: 'left',  items: STIMULI.WFH },
+            { category: 'InOffice', side: 'right', items: STIMULI.InOffice } ]
+        : [ { category: 'InOffice', side: 'left',  items: STIMULI.InOffice },
+            { category: 'WFH',      side: 'right', items: STIMULI.WFH } ],
+    },
+    // Block 2 — attribute practice
+    {
+      blockNumber: 2,
+      blockLabel:  'Practice: Negative / Positive',
+      blockType:   'practice',
+      totalTrials: 24,
+      labelLeft:   'Negative',
+      labelRight:  'Positive',
+      categorySets: [
+        { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+        { category: 'Positive', side: 'right', items: STIMULI.Positive },
+      ],
+    },
+    // Block 3 — combined practice (24 trials)
+    {
+      blockNumber: 3,
+      blockLabel:  isA ? 'Test: WFH+Neg / Office+Pos' : 'Test: Office+Neg / WFH+Pos',
+      blockType:   isA ? 'compatible' : 'incompatible',
+      totalTrials: 24,
+      labelLeft:   isA ? 'WFH\nNegative'    : 'In-Office\nNegative',
+      labelRight:  isA ? 'In-Office\nPositive' : 'WFH\nPositive',
+      categorySets: isA
+        ? [ { category: 'WFH',      side: 'left',  items: STIMULI.WFH },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'InOffice', side: 'right', items: STIMULI.InOffice },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ]
+        : [ { category: 'InOffice', side: 'left',  items: STIMULI.InOffice },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'WFH',      side: 'right', items: STIMULI.WFH },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ],
+    },
+    // Block 4 — combined test (48 trials, same pairings as block 3)
+    {
+      blockNumber: 4,
+      blockLabel:  isA ? 'Test: WFH+Neg / Office+Pos' : 'Test: Office+Neg / WFH+Pos',
+      blockType:   isA ? 'compatible' : 'incompatible',
+      totalTrials: 48,
+      labelLeft:   isA ? 'WFH\nNegative'    : 'In-Office\nNegative',
+      labelRight:  isA ? 'In-Office\nPositive' : 'WFH\nPositive',
+      categorySets: isA
+        ? [ { category: 'WFH',      side: 'left',  items: STIMULI.WFH },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'InOffice', side: 'right', items: STIMULI.InOffice },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ]
+        : [ { category: 'InOffice', side: 'left',  items: STIMULI.InOffice },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'WFH',      side: 'right', items: STIMULI.WFH },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ],
+    },
+    // Block 5 — target reversal practice
+    {
+      blockNumber: 5,
+      blockLabel:  isA ? 'Practice: In-Office / WFH' : 'Practice: WFH / In-Office',
+      blockType:   'practice',
+      totalTrials: 24,
+      labelLeft:   isA ? 'In-Office' : 'WFH',
+      labelRight:  isA ? 'WFH'       : 'In-Office',
+      categorySets: isA
+        ? [ { category: 'InOffice', side: 'left',  items: STIMULI.InOffice },
+            { category: 'WFH',      side: 'right', items: STIMULI.WFH } ]
+        : [ { category: 'WFH',      side: 'left',  items: STIMULI.WFH },
+            { category: 'InOffice', side: 'right', items: STIMULI.InOffice } ],
+    },
+    // Block 6 — combined practice reversed (24 trials)
+    {
+      blockNumber: 6,
+      blockLabel:  isA ? 'Test: Office+Neg / WFH+Pos' : 'Test: WFH+Neg / Office+Pos',
+      blockType:   isA ? 'incompatible' : 'compatible',
+      totalTrials: 24,
+      labelLeft:   isA ? 'In-Office\nNegative' : 'WFH\nNegative',
+      labelRight:  isA ? 'WFH\nPositive'       : 'In-Office\nPositive',
+      categorySets: isA
+        ? [ { category: 'InOffice', side: 'left',  items: STIMULI.InOffice },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'WFH',      side: 'right', items: STIMULI.WFH },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ]
+        : [ { category: 'WFH',      side: 'left',  items: STIMULI.WFH },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'InOffice', side: 'right', items: STIMULI.InOffice },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ],
+    },
+    // Block 7 — combined test reversed (48 trials)
+    {
+      blockNumber: 7,
+      blockLabel:  isA ? 'Test: Office+Neg / WFH+Pos' : 'Test: WFH+Neg / Office+Pos',
+      blockType:   isA ? 'incompatible' : 'compatible',
+      totalTrials: 48,
+      labelLeft:   isA ? 'In-Office\nNegative' : 'WFH\nNegative',
+      labelRight:  isA ? 'WFH\nPositive'       : 'In-Office\nPositive',
+      categorySets: isA
+        ? [ { category: 'InOffice', side: 'left',  items: STIMULI.InOffice },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'WFH',      side: 'right', items: STIMULI.WFH },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ]
+        : [ { category: 'WFH',      side: 'left',  items: STIMULI.WFH },
+            { category: 'Negative', side: 'left',  items: STIMULI.Negative },
+            { category: 'InOffice', side: 'right', items: STIMULI.InOffice },
+            { category: 'Positive', side: 'right', items: STIMULI.Positive } ],
+    },
+  ];
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════════ */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateParticipantId() {
+  const ts   = Date.now();
+  const rand = Math.floor(Math.random() * 9000) + 1000;
+  return `P${ts}${rand}`;
+}
+
+function buildTrialList(categorySets, totalTrials) {
+  const perCategory = totalTrials / categorySets.length;
+  let pool = [];
+  for (const { category, side, items } of categorySets) {
+    const key = side === 'left' ? 'E' : 'I';
+    const repeated = [];
+    while (repeated.length < perCategory) {
+      for (const item of shuffle(items)) {
+        repeated.push({ stimulus: item, stimulus_category: category, correct_key: key });
+        if (repeated.length >= perCategory) break;
+      }
+    }
+    pool = pool.concat(repeated.slice(0, perCategory));
+  }
+  return shuffle(pool);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER STIMULUS
+   Handles both text and image items.
+═══════════════════════════════════════════════════════════════ */
+function renderStimulus(item) {
+  const el = document.getElementById('stimulus');
+  el.innerHTML = '';
+  if (item.type === 'text') {
+    el.textContent = item.content;
+  } else if (item.type === 'image') {
+    const img = document.createElement('img');
+    img.src = item.content;
+    img.alt = item.content;
+    el.appendChild(img);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SESSION STATE
+═══════════════════════════════════════════════════════════════ */
+const session = {
+  participantId:  generateParticipantId(),
+  orderCondition: Math.random() < 0.5 ? 'A' : 'B',
+  startTimeIso:   new Date().toISOString(),
+  endTimeIso:     null,
+  trialData:      [],    // all 216 trial records
+  surveyData:     {},    // survey answers
+  blockSequence:  null,
+  currentBlockIdx: 0,
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN MANAGEMENT
+═══════════════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FULLSCREEN
+═══════════════════════════════════════════════════════════════ */
+let fullscreenPaused = false;
+let fullscreenResumeCallback = null;
+
+function requestFullscreen() {
+  const el = document.documentElement;
+  if (el.requestFullscreen)             return el.requestFullscreen();
+  if (el.webkitRequestFullscreen)       return el.webkitRequestFullscreen();
+  if (el.mozRequestFullScreen)          return el.mozRequestFullScreen();
+  return Promise.resolve();
+}
+
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+}
+
+document.addEventListener('fullscreenchange',       onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+document.addEventListener('mozfullscreenchange',    onFullscreenChange);
+
+function onFullscreenChange() {
+  if (!isFullscreen() && fullscreenResumeCallback) {
+    // Mid-trial fullscreen exit — pause
+    fullscreenPaused = true;
+    document.getElementById('screen-fullscreen-lost').classList.add('active');
+  }
+}
+
+document.getElementById('btn-reenter-fullscreen').addEventListener('click', () => {
+  requestFullscreen().then(() => {
+    document.getElementById('screen-fullscreen-lost').classList.remove('active');
+    fullscreenPaused = false;
+    if (fullscreenResumeCallback) fullscreenResumeCallback();
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   WELCOME
+═══════════════════════════════════════════════════════════════ */
+const consentCheckbox = document.getElementById('consent-checkbox');
+const btnBegin        = document.getElementById('btn-begin');
+
+consentCheckbox.addEventListener('change', () => {
+  btnBegin.disabled = !consentCheckbox.checked;
+});
+
+btnBegin.addEventListener('click', () => {
+  session.blockSequence = buildBlockSequence(session.orderCondition);
+  session.currentBlockIdx = 0;
+  requestFullscreen().then(() => advanceToNextBlock());
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   BLOCK SEQUENCER
+═══════════════════════════════════════════════════════════════ */
+function advanceToNextBlock() {
+  if (session.currentBlockIdx >= session.blockSequence.length) {
+    session.endTimeIso = new Date().toISOString();
+    startSurvey();
+    return;
+  }
+  const blockDef = session.blockSequence[session.currentBlockIdx];
+  showInstructions(blockDef, () => {
+    runBlock(blockDef, (records) => {
+      session.trialData = session.trialData.concat(records);
+      session.currentBlockIdx++;
+      showBreak(blockDef.blockNumber, () => advanceToNextBlock());
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INSTRUCTIONS
+═══════════════════════════════════════════════════════════════ */
+function showInstructions(blockDef, onReady) {
+  document.getElementById('instr-title').textContent =
+    `Block ${blockDef.blockNumber} of 7 — ${blockDef.blockType === 'practice' ? 'Practice' : 'Test'}`;
+
+  let body = '';
+  if (blockDef.blockType === 'practice') {
+    body = 'Sort each word into the correct category as quickly and accurately as possible. Press E for left, I for right.';
+  } else {
+    body = 'Sort each word into the correct combined category as quickly and accurately as possible. Some words will belong to one of two categories on the same side.';
+  }
+  document.getElementById('instr-body').textContent = body;
+  document.getElementById('instr-left-label').textContent  = `← ${blockDef.labelLeft.replace('\n', ' / ')}  (E)`;
+  document.getElementById('instr-right-label').textContent = `(I)  ${blockDef.labelRight.replace('\n', ' / ')} →`;
+
+  showScreen('screen-block-instruction');
+
+  function onSpace(e) {
+    if (e.code === 'Space' && !e.repeat) {
+      document.removeEventListener('keydown', onSpace);
+      onReady();
+    }
+  }
+  document.addEventListener('keydown', onSpace);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BREAK SCREEN
+═══════════════════════════════════════════════════════════════ */
+function showBreak(completedBlockNumber, onContinue) {
+  if (completedBlockNumber >= 7) {
+    // No break after last block — go straight
+    onContinue();
+    return;
+  }
+  document.getElementById('break-title').textContent =
+    `Block ${completedBlockNumber} of 7 complete`;
+  document.getElementById('break-body').textContent =
+    completedBlockNumber < 7
+      ? `Take a short break if needed. ${7 - completedBlockNumber} block${7 - completedBlockNumber > 1 ? 's' : ''} remaining.`
+      : '';
+  document.getElementById('progress-fill').style.width = `${(completedBlockNumber / 7) * 100}%`;
+
+  showScreen('screen-break');
+
+  const btn = document.getElementById('btn-next-block');
+  const handler = () => {
+    btn.removeEventListener('click', handler);
+    onContinue();
+  };
+  btn.addEventListener('click', handler);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BLOCK RUNNER
+═══════════════════════════════════════════════════════════════ */
+function runBlock(blockDef, onComplete) {
+  const trials   = buildTrialList(blockDef.categorySets, blockDef.totalTrials);
+  const recorded = [];
+  let trialIdx   = 0;
+
+  document.getElementById('trial-label-left').innerHTML  =
+    blockDef.labelLeft.replace('\n', '<br>');
+  document.getElementById('trial-label-right').innerHTML =
+    blockDef.labelRight.replace('\n', '<br>');
+
+  showScreen('screen-trial');
+
+  function runNextTrial() {
+    if (trialIdx >= trials.length) {
+      onComplete(recorded);
+      return;
+    }
+    runTrial(trials[trialIdx], trialIdx + 1, blockDef, (record) => {
+      recorded.push(record);
+      trialIdx++;
+      setTimeout(runNextTrial, 250);
+    });
+  }
+
+  runNextTrial();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SINGLE TRIAL
+═══════════════════════════════════════════════════════════════ */
+function runTrial(trial, trialNumberInBlock, blockDef, onDone) {
+  const errorMarker = document.getElementById('error-marker');
+  errorMarker.style.visibility = 'hidden';
+
+  const trialId      = `B${blockDef.blockNumber}_T${trialNumberInBlock}`;
+  const timestampIso = new Date().toISOString();
+  let stimulusOnsetPT   = null;
+  let firstResponsePT   = null;
+  let firstResponseKey  = null;
+  let firstResponseCorrect = null;
+  let responded         = false;
+  let timeoutHandle     = null;
+  let keyHandler        = null;
+  let paused            = false;
+
+  function finish(firstKey, firstCorrect, rtMs, totalMs) {
+    cleanup();
+    onDone({
+      participant_id:         session.participantId,
+      order_condition:        session.orderCondition,
+      block_number:           blockDef.blockNumber,
+      block_label:            blockDef.blockLabel,
+      block_type:             blockDef.blockType,
+      trial_number_in_block:  trialNumberInBlock,
+      trial_id:               trialId,
+      stimulus:               trial.stimulus.content,
+      stimulus_category:      trial.stimulus_category,
+      correct_key:            trial.correct_key,
+      first_response_key:     firstKey,
+      first_response_correct: firstCorrect,
+      rt_ms:                  rtMs,
+      total_trial_time_ms:    totalMs,
+      timestamp_iso:          timestampIso,
+    });
+  }
+
+  function cleanup() {
+    if (keyHandler)    document.removeEventListener('keydown', keyHandler);
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+    fullscreenResumeCallback = null;
+  }
+
+  renderStimulus(trial.stimulus);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      stimulusOnsetPT = performance.now();
+
+      timeoutHandle = setTimeout(() => {
+        cleanup();
+        finish(null, null, null, null);
+      }, 10000);
+
+      fullscreenResumeCallback = () => {
+        // Re-render stimulus after returning from fullscreen pause
+        renderStimulus(trial.stimulus);
+        // Reset timer — don't penalise the participant for the pause
+        stimulusOnsetPT = performance.now();
+        if (!responded) {
+          clearTimeout(timeoutHandle);
+          timeoutHandle = setTimeout(() => {
+            cleanup();
+            finish(null, null, null, null);
+          }, 10000);
+        }
+      };
+
+      keyHandler = (e) => {
+        if (e.repeat || fullscreenPaused) return;
+        const key = e.key.toUpperCase();
+        if (key !== 'E' && key !== 'I') return;
+
+        const nowPT = performance.now();
+
+        if (!responded) {
+          responded            = true;
+          firstResponsePT      = nowPT;
+          firstResponseKey     = key;
+          firstResponseCorrect = (key === trial.correct_key);
+
+          if (firstResponseCorrect) {
+            const rt = Math.round(firstResponsePT - stimulusOnsetPT);
+            finish(firstResponseKey, true, rt, rt);
+          } else {
+            errorMarker.style.visibility = 'visible';
+          }
+        } else {
+          if (key === trial.correct_key) {
+            const total = Math.round(nowPT - stimulusOnsetPT);
+            errorMarker.style.visibility = 'hidden';
+            finish(firstResponseKey, false, Math.round(firstResponsePT - stimulusOnsetPT), total);
+          }
+        }
+      };
+
+      document.addEventListener('keydown', keyHandler);
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   D-SCORE (Greenwald, Nosek & Banaji, 2003 — D6 variant)
+═══════════════════════════════════════════════════════════════ */
+function computeDScores(trialData, orderCondition) {
+  const isA = orderCondition === 'A';
+
+  // Compatible blocks: Order A → 3+4; Order B → 6+7
+  // Incompatible blocks: Order A → 6+7; Order B → 3+4
+  const compatibleNums   = isA ? [3, 4] : [6, 7];
+  const incompatibleNums = isA ? [6, 7] : [3, 4];
+
+  const testBlocks = trialData.filter(t => [3, 4, 6, 7].includes(t.block_number));
+
+  // Flag fast responder (>10% trials with RT < 300 ms)
+  const validRTs   = testBlocks.filter(t => t.rt_ms !== null);
+  const fastCount  = validRTs.filter(t => t.rt_ms < 300).length;
+  const excludedFast = validRTs.length > 0 && fastCount / validRTs.length > 0.1;
+
+  // Drop timeouts (RT > 10000 is already excluded since we store null for those)
+  // Apply error penalty: replace error RT with block-mean-correct + 600
+  function applyPenalty(trials) {
+    const byBlock = {};
+    for (const t of trials) {
+      if (!byBlock[t.block_number]) byBlock[t.block_number] = [];
+      byBlock[t.block_number].push(t);
+    }
+    return trials.map(t => {
+      if (t.rt_ms === null) return null; // timeout — excluded
+      if (t.first_response_correct === false) {
+        const blockCorrect = byBlock[t.block_number]
+          .filter(x => x.first_response_correct === true && x.rt_ms !== null)
+          .map(x => x.rt_ms);
+        const blockMean = blockCorrect.length > 0
+          ? blockCorrect.reduce((a, b) => a + b, 0) / blockCorrect.length
+          : t.rt_ms;
+        return { ...t, rt_ms: blockMean + 600 };
+      }
+      return t;
+    }).filter(t => t !== null);
+  }
+
+  const adjusted = applyPenalty(testBlocks);
+
+  function mean(arr) {
+    if (!arr.length) return NaN;
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+  }
+
+  function pooledSD(allAdjusted) {
+    const rts = allAdjusted.map(t => t.rt_ms);
+    const m   = mean(rts);
+    const variance = rts.reduce((s, v) => s + (v - m) ** 2, 0) / rts.length;
+    return Math.sqrt(variance);
+  }
+
+  function dScore(compatNums, incompatNums, subset) {
+    const compat   = subset.filter(t => compatNums.includes(t.block_number));
+    const incompat = subset.filter(t => incompatNums.includes(t.block_number));
+    const sd       = pooledSD(subset);
+    if (!sd || isNaN(sd)) return NaN;
+    return (mean(incompat.map(t => t.rt_ms)) - mean(compat.map(t => t.rt_ms))) / sd;
+  }
+
+  const dOverall  = dScore(compatibleNums, incompatibleNums, adjusted);
+
+  // D using only 24-trial blocks (3 & 6)
+  const adjusted24 = adjusted.filter(t => [3, 6].includes(t.block_number));
+  const compatNums24   = isA ? [3] : [6];
+  const incompatNums24 = isA ? [6] : [3];
+  const d24 = dScore(compatNums24, incompatNums24, adjusted24);
+
+  // D using only 48-trial blocks (4 & 7)
+  const adjusted48 = adjusted.filter(t => [4, 7].includes(t.block_number));
+  const compatNums48   = isA ? [4] : [7];
+  const incompatNums48 = isA ? [7] : [4];
+  const d48 = dScore(compatNums48, incompatNums48, adjusted48);
+
+  // Block-level accuracy
+  const accuracy = {};
+  for (let b = 1; b <= 7; b++) {
+    const bTrials = trialData.filter(t => t.block_number === b && t.rt_ms !== null);
+    accuracy[b] = bTrials.length > 0
+      ? bTrials.filter(t => t.first_response_correct).length / bTrials.length
+      : NaN;
+  }
+
+  // Mean RT for compatible and incompatible test blocks (raw first-response RT)
+  const compatRaw   = trialData.filter(t => compatibleNums.includes(t.block_number)   && t.rt_ms !== null);
+  const incompatRaw = trialData.filter(t => incompatibleNums.includes(t.block_number) && t.rt_ms !== null);
+
+  return {
+    excludedFast,
+    dOverall,
+    d24,
+    d48,
+    accuracy,
+    meanRTCompatible:   mean(compatRaw.map(t => t.rt_ms)),
+    meanRTIncompatible: mean(incompatRaw.map(t => t.rt_ms)),
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CSV EXPORT
+═══════════════════════════════════════════════════════════════ */
+function downloadCSV(filename, csvString) {
+  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function escapeCSV(val) {
+  if (val === null || val === undefined) return '';
+  const s = String(val);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function buildTrialCSV(trialData, participantId, orderCondition) {
+  const headers = [
+    'participant_id','order_condition','block_number','block_label','block_type',
+    'trial_number_in_block','trial_id','stimulus','stimulus_category',
+    'correct_key','first_response_key','first_response_correct',
+    'rt_ms','total_trial_time_ms','timestamp_iso',
+  ];
+  const rows = [headers.join(',')];
+  for (const t of trialData) {
+    rows.push(headers.map(h => escapeCSV(t[h])).join(','));
+  }
+  return rows.join('\n');
+}
+
+function buildSummaryCSV(session, scores) {
+  const pid   = session.participantId;
+  const order = session.orderCondition;
+  const dur   = session.endTimeIso
+    ? Math.round((new Date(session.endTimeIso) - new Date(session.startTimeIso)) / 1000)
+    : '';
+
+  // Build per-trial RT and ERR columns — 216 total in block order
+  const BLOCK_SIZES = [24, 24, 24, 48, 24, 24, 48]; // blocks 1–7
+  const rtCols  = {};
+  const errCols = {};
+
+  for (let b = 1; b <= 7; b++) {
+    const size = BLOCK_SIZES[b - 1];
+    for (let t = 1; t <= size; t++) {
+      rtCols[`B${b}_T${t}_RT`]  = '';
+      errCols[`B${b}_T${t}_ERR`] = '';
+    }
+  }
+
+  for (const t of session.trialData) {
+    const rtKey  = `B${t.block_number}_T${t.trial_number_in_block}_RT`;
+    const errKey = `B${t.block_number}_T${t.trial_number_in_block}_ERR`;
+    rtCols[rtKey]   = t.rt_ms !== null ? t.rt_ms : '';
+    errCols[errKey] = t.rt_ms !== null
+      ? (t.first_response_correct ? 0 : 1)
+      : '';
+  }
+
+  const sv = session.surveyData;
+
+  const row = {
+    participant_id:            pid,
+    order_condition:           order,
+    start_time_iso:            session.startTimeIso,
+    end_time_iso:              session.endTimeIso || '',
+    duration_seconds:          dur,
+    excluded_fast_responder:   scores.excludedFast,
+    D_score_overall:           isNaN(scores.dOverall)  ? '' : scores.dOverall.toFixed(4),
+    D_score_24trial:           isNaN(scores.d24)       ? '' : scores.d24.toFixed(4),
+    D_score_48trial:           isNaN(scores.d48)       ? '' : scores.d48.toFixed(4),
+    accuracy_block1:           isNaN(scores.accuracy[1]) ? '' : scores.accuracy[1].toFixed(4),
+    accuracy_block2:           isNaN(scores.accuracy[2]) ? '' : scores.accuracy[2].toFixed(4),
+    accuracy_block3:           isNaN(scores.accuracy[3]) ? '' : scores.accuracy[3].toFixed(4),
+    accuracy_block4:           isNaN(scores.accuracy[4]) ? '' : scores.accuracy[4].toFixed(4),
+    accuracy_block5:           isNaN(scores.accuracy[5]) ? '' : scores.accuracy[5].toFixed(4),
+    accuracy_block6:           isNaN(scores.accuracy[6]) ? '' : scores.accuracy[6].toFixed(4),
+    accuracy_block7:           isNaN(scores.accuracy[7]) ? '' : scores.accuracy[7].toFixed(4),
+    mean_RT_compatible:        isNaN(scores.meanRTCompatible)   ? '' : Math.round(scores.meanRTCompatible),
+    mean_RT_incompatible:      isNaN(scores.meanRTIncompatible) ? '' : Math.round(scores.meanRTIncompatible),
+    ...rtCols,
+    ...errCols,
+    // Survey columns
+    stereo_WFH_productive:     sv.stereo_WFH_productive     ?? '',
+    stereo_WFH_efficient:      sv.stereo_WFH_efficient      ?? '',
+    stereo_WFH_focused:        sv.stereo_WFH_focused        ?? '',
+    stereo_WFH_professional:   sv.stereo_WFH_professional   ?? '',
+    stereo_WFH_reliable:       sv.stereo_WFH_reliable       ?? '',
+    stereo_WFH_motivated:      sv.stereo_WFH_motivated      ?? '',
+    stereo_office_productive:  sv.stereo_office_productive  ?? '',
+    stereo_office_efficient:   sv.stereo_office_efficient   ?? '',
+    stereo_office_focused:     sv.stereo_office_focused     ?? '',
+    stereo_office_professional:sv.stereo_office_professional ?? '',
+    stereo_office_reliable:    sv.stereo_office_reliable    ?? '',
+    stereo_office_motivated:   sv.stereo_office_motivated   ?? '',
+    favor_WFH:                 sv.favor_WFH                 ?? '',
+    favor_office:              sv.favor_office              ?? '',
+    comparative_preference:    sv.comparative_preference    ?? '',
+    paper_review:              sv.paper_review              ?? '',
+    age:                       sv.age                       ?? '',
+    gender:                    sv.gender                    ?? '',
+    primary_field:             sv.primary_field             ?? '',
+    career_stage:              sv.career_stage              ?? '',
+    current_work_mode:         sv.current_work_mode         ?? '',
+  };
+
+  const headers = Object.keys(row);
+  return [headers.join(','), headers.map(h => escapeCSV(row[h])).join(',')].join('\n');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SURVEY
+═══════════════════════════════════════════════════════════════ */
+const SURVEY_PAGES = [
+  { id: 'stereo',   title: 'Stereotype Ratings' },
+  { id: 'favor',    title: 'Overall Favorability' },
+  { id: 'compare',  title: 'Comparative Preference' },
+  { id: 'paper',    title: 'Paper Review Scenario' },
+  { id: 'demo',     title: 'About You' },
+];
+
+let surveyPageIdx = 0;
+
+function startSurvey() {
+  surveyPageIdx = 0;
+  renderSurveyPage();
+  showScreen('screen-survey');
+}
+
+function renderSurveyPage() {
+  const page = SURVEY_PAGES[surveyPageIdx];
+  document.getElementById('survey-page-title').textContent = page.title;
+  document.getElementById('survey-error').classList.remove('visible');
+
+  const container = document.getElementById('survey-content');
+  container.innerHTML = '';
+
+  const btn = document.getElementById('btn-survey-next');
+  btn.textContent = surveyPageIdx < SURVEY_PAGES.length - 1 ? 'Next' : 'Finish & Download';
+
+  if (page.id === 'stereo')  renderStereoPage(container);
+  if (page.id === 'favor')   renderFavorPage(container);
+  if (page.id === 'compare') renderComparePage(container);
+  if (page.id === 'paper')   renderPaperPage(container);
+  if (page.id === 'demo')    renderDemoPage(container);
+}
+
+// ── Stereotype ratings ──────────────────────────────────────────
+function renderStereoPage(container) {
+  const traits = ['productive','efficient','focused','professional','reliable','motivated'];
+  const table  = document.createElement('table');
+  table.className = 'survey-table';
+
+  const thead = table.createTHead();
+  const hRow  = thead.insertRow();
+  ['Adjective','WFH Firms (1–5)','In-Office Firms (1–5)'].forEach(h => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    hRow.appendChild(th);
+  });
+
+  const tbody = table.createTBody();
+  for (const trait of traits) {
+    const tr = tbody.insertRow();
+    const tdLabel = tr.insertCell();
+    tdLabel.textContent = trait.charAt(0).toUpperCase() + trait.slice(1);
+
+    for (const grp of ['WFH', 'office']) {
+      const td = tr.insertCell();
+      const group = document.createElement('div');
+      group.style.display = 'flex';
+      group.style.gap = '8px';
+      group.style.justifyContent = 'center';
+      for (let v = 1; v <= 5; v++) {
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.flexDirection = 'column';
+        label.style.alignItems = 'center';
+        label.style.gap = '4px';
+        label.style.fontSize = '0.85rem';
+        const radio = document.createElement('input');
+        radio.type  = 'radio';
+        radio.name  = `stereo_${grp}_${trait}`;
+        radio.value = v;
+        label.appendChild(radio);
+        label.append(String(v));
+        group.appendChild(label);
+      }
+      td.appendChild(group);
+    }
+  }
+  container.appendChild(table);
+}
+
+// ── Favorability ────────────────────────────────────────────────
+function renderFavorPage(container) {
+  for (const { key, label } of [
+    { key: 'favor_WFH',    label: 'How favorably do you feel toward WFH firms?' },
+    { key: 'favor_office', label: 'How favorably do you feel toward in-office firms?' },
+  ]) {
+    const row = document.createElement('div');
+    row.className = 'form-row';
+    row.innerHTML = `<label>${label}</label>`;
+
+    const sliderRow = document.createElement('div');
+    sliderRow.className = 'slider-row';
+
+    const slider = document.createElement('input');
+    slider.type = 'range'; slider.min = 0; slider.max = 10; slider.step = 1;
+    slider.id = key; slider.value = '';
+    slider.dataset.touched = 'false';
+
+    const valDisplay = document.createElement('span');
+    valDisplay.className = 'slider-val';
+    valDisplay.textContent = '—';
+
+    const labels = document.createElement('div');
+    labels.style.display = 'flex';
+    labels.style.justifyContent = 'space-between';
+    labels.style.fontSize = '0.8rem';
+    labels.style.color = '#666';
+    labels.innerHTML = '<span>0 = Very unfavorable</span><span>10 = Very favorable</span>';
+
+    slider.addEventListener('input', () => {
+      slider.dataset.touched = 'true';
+      valDisplay.textContent = slider.value;
+    });
+
+    sliderRow.appendChild(slider);
+    sliderRow.appendChild(valDisplay);
+    row.appendChild(sliderRow);
+    row.appendChild(labels);
+    container.appendChild(row);
+  }
+}
+
+// ── Comparative preference ──────────────────────────────────────
+function renderComparePage(container) {
+  const options = [
+    { value: 'strongly_prefer_office',   label: 'I strongly prefer in-office firms over WFH firms.' },
+    { value: 'moderately_prefer_office', label: 'I moderately prefer in-office firms over WFH firms.' },
+    { value: 'no_preference',            label: 'I have no preference between the two.' },
+    { value: 'moderately_prefer_WFH',    label: 'I moderately prefer WFH firms over in-office firms.' },
+    { value: 'strongly_prefer_WFH',      label: 'I strongly prefer WFH firms over in-office firms.' },
+  ];
+  const p = document.createElement('p');
+  p.textContent = 'Which statement best describes your view?';
+  container.appendChild(p);
+  const group = document.createElement('div');
+  group.className = 'radio-group';
+  for (const opt of options) {
+    const label = document.createElement('label');
+    const radio = document.createElement('input');
+    radio.type = 'radio'; radio.name = 'comparative_preference'; radio.value = opt.value;
+    label.appendChild(radio);
+    label.append(' ' + opt.label);
+    group.appendChild(label);
+  }
+  container.appendChild(group);
+}
+
+// ── Paper review scenario ───────────────────────────────────────
+function renderPaperPage(container) {
+  const p = document.createElement('p');
+  p.style.lineHeight = '1.7';
+  p.innerHTML = `Imagine you are reviewing two empirical papers submitted to a top-tier management journal. Both use comparable data and methods, and both report a positive association between the studied work arrangement and firm productivity. They differ only in the work arrangement studied:<br><br>
+    <strong>Paper A</strong> studies firms that have adopted WFH practices.<br>
+    <strong>Paper B</strong> studies firms with traditional in-office work.<br><br>
+    On first reading, which paper do you find more credible?`;
+  container.appendChild(p);
+
+  const options = [
+    { value: 'clearly_more_credible_office',   label: 'Paper B (in-office) is clearly more credible' },
+    { value: 'somewhat_more_credible_office',  label: 'Paper B (in-office) is somewhat more credible' },
+    { value: 'equally_credible',               label: 'Equally credible' },
+    { value: 'somewhat_more_credible_WFH',     label: 'Paper A (WFH) is somewhat more credible' },
+    { value: 'clearly_more_credible_WFH',      label: 'Paper A (WFH) is clearly more credible' },
+  ];
+  const group = document.createElement('div');
+  group.className = 'radio-group';
+  group.style.marginTop = '16px';
+  for (const opt of options) {
+    const label = document.createElement('label');
+    const radio = document.createElement('input');
+    radio.type = 'radio'; radio.name = 'paper_review'; radio.value = opt.value;
+    label.appendChild(radio);
+    label.append(' ' + opt.label);
+    group.appendChild(label);
+  }
+  container.appendChild(group);
+}
+
+// ── Demographics ────────────────────────────────────────────────
+function renderDemoPage(container) {
+  // Age
+  const ageRow = document.createElement('div');
+  ageRow.className = 'form-row';
+  ageRow.innerHTML = `<label for="demo-age">Age</label><input type="number" id="demo-age" min="18" max="100" placeholder="e.g. 35" style="max-width:120px">`;
+  container.appendChild(ageRow);
+
+  // Gender
+  const genderRow = document.createElement('div');
+  genderRow.className = 'form-row';
+  genderRow.innerHTML = '<label>Gender</label>';
+  const genderGroup = document.createElement('div');
+  genderGroup.className = 'radio-group';
+  genderGroup.style.flexDirection = 'row';
+  genderGroup.style.flexWrap = 'wrap';
+  genderGroup.style.gap = '16px';
+  for (const g of ['Female','Male','Non-binary','Prefer not to say']) {
+    const lbl = document.createElement('label');
+    const r   = document.createElement('input');
+    r.type = 'radio'; r.name = 'demo_gender'; r.value = g.toLowerCase().replace(/ /g,'_');
+    lbl.appendChild(r); lbl.append(' ' + g);
+    genderGroup.appendChild(lbl);
+  }
+  genderRow.appendChild(genderGroup);
+  container.appendChild(genderRow);
+
+  // Primary field
+  const fieldRow = document.createElement('div');
+  fieldRow.className = 'form-row';
+  fieldRow.innerHTML = `<label for="demo-field">Primary Field</label><input type="text" id="demo-field" placeholder="e.g. Management, Economics">`;
+  container.appendChild(fieldRow);
+
+  // Career stage
+  const stageRow = document.createElement('div');
+  stageRow.className = 'form-row';
+  stageRow.innerHTML = '<label>Career Stage</label>';
+  const stageGroup = document.createElement('div');
+  stageGroup.className = 'radio-group';
+  stageGroup.style.flexDirection = 'row';
+  stageGroup.style.flexWrap = 'wrap';
+  stageGroup.style.gap = '16px';
+  for (const s of ['PhD student','Postdoc','Assistant Prof','Associate Prof','Full Prof','Other']) {
+    const lbl = document.createElement('label');
+    const r   = document.createElement('input');
+    r.type = 'radio'; r.name = 'demo_stage'; r.value = s.toLowerCase().replace(/ /g,'_');
+    lbl.appendChild(r); lbl.append(' ' + s);
+    stageGroup.appendChild(lbl);
+  }
+  stageRow.appendChild(stageGroup);
+  container.appendChild(stageRow);
+
+  // Work mode
+  const modeRow = document.createElement('div');
+  modeRow.className = 'form-row';
+  modeRow.innerHTML = '<label>Your current work is primarily:</label>';
+  const modeGroup = document.createElement('div');
+  modeGroup.className = 'radio-group';
+  modeGroup.style.flexDirection = 'row';
+  modeGroup.style.gap = '16px';
+  for (const m of ['In-office','Hybrid','WFH']) {
+    const lbl = document.createElement('label');
+    const r   = document.createElement('input');
+    r.type = 'radio'; r.name = 'demo_mode'; r.value = m.toLowerCase().replace(/-/g,'_');
+    lbl.appendChild(r); lbl.append(' ' + m);
+    modeGroup.appendChild(lbl);
+  }
+  modeRow.appendChild(modeGroup);
+  container.appendChild(modeRow);
+}
+
+/* ── Survey validation & data collection ───────────────────────── */
+function collectAndValidateSurveyPage() {
+  const page = SURVEY_PAGES[surveyPageIdx];
+  const sv   = session.surveyData;
+  const err  = document.getElementById('survey-error');
+
+  if (page.id === 'stereo') {
+    const traits = ['productive','efficient','focused','professional','reliable','motivated'];
+    for (const trait of traits) {
+      for (const grp of ['WFH','office']) {
+        const sel = document.querySelector(`input[name="stereo_${grp}_${trait}"]:checked`);
+        if (!sel) { err.classList.add('visible'); return false; }
+        sv[`stereo_${grp}_${trait}`] = Number(sel.value);
+      }
+    }
+  }
+
+  if (page.id === 'favor') {
+    for (const key of ['favor_WFH','favor_office']) {
+      const slider = document.getElementById(key);
+      if (slider.dataset.touched !== 'true') { err.classList.add('visible'); return false; }
+      sv[key] = Number(slider.value);
+    }
+  }
+
+  if (page.id === 'compare') {
+    const sel = document.querySelector('input[name="comparative_preference"]:checked');
+    if (!sel) { err.classList.add('visible'); return false; }
+    sv.comparative_preference = sel.value;
+  }
+
+  if (page.id === 'paper') {
+    const sel = document.querySelector('input[name="paper_review"]:checked');
+    if (!sel) { err.classList.add('visible'); return false; }
+    sv.paper_review = sel.value;
+  }
+
+  if (page.id === 'demo') {
+    const age   = document.getElementById('demo-age').value;
+    const field = document.getElementById('demo-field').value.trim();
+    const gender = document.querySelector('input[name="demo_gender"]:checked');
+    const stage  = document.querySelector('input[name="demo_stage"]:checked');
+    const mode   = document.querySelector('input[name="demo_mode"]:checked');
+    if (!age || !field || !gender || !stage || !mode) { err.classList.add('visible'); return false; }
+    sv.age              = Number(age);
+    sv.gender           = gender.value;
+    sv.primary_field    = field;
+    sv.career_stage     = stage.value;
+    sv.current_work_mode = mode.value;
+  }
+
+  return true;
+}
+
+document.getElementById('btn-survey-next').addEventListener('click', () => {
+  if (!collectAndValidateSurveyPage()) return;
+  surveyPageIdx++;
+  if (surveyPageIdx >= SURVEY_PAGES.length) {
+    showDoneScreen();
+  } else {
+    renderSurveyPage();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   DONE + DOWNLOAD
+═══════════════════════════════════════════════════════════════ */
+function showDoneScreen() {
+  showScreen('screen-done');
+}
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  const scores = computeDScores(session.trialData, session.orderCondition);
+
+  const trialCSV   = buildTrialCSV(session.trialData, session.participantId, session.orderCondition);
+  const summaryCSV = buildSummaryCSV(session, scores);
+
+  downloadCSV(`IAT_${session.participantId}.csv`, trialCSV);
+  setTimeout(() => {
+    downloadCSV(`IAT_summary_${session.orderCondition}_${session.participantId}.csv`, summaryCSV);
+  }, 500);
+
+  document.getElementById('btn-download').disabled = true;
+  document.getElementById('done-msg').style.display = 'block';
+});
+
+</script>
+</body>
+</html>
