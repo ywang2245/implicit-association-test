@@ -915,15 +915,12 @@ function computeDScores(trialData, orderCondition) {
    CSV EXPORT
 ═══════════════════════════════════════════════════════════════ */
 function downloadCSV(filename, csvString) {
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvString);
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 function escapeCSV(val) {
@@ -1354,18 +1351,21 @@ function showDoneScreen() {
 }
 
 document.getElementById('btn-download').addEventListener('click', () => {
-  const scores = computeDScores(session.trialData, session.orderCondition);
+  try {
+    const scores = computeDScores(session.trialData, session.orderCondition);
+    const trialCSV   = buildTrialCSV(session.trialData, session.participantId, session.orderCondition);
+    const summaryCSV = buildSummaryCSV(session, scores);
 
-  const trialCSV   = buildTrialCSV(session.trialData, session.participantId, session.orderCondition);
-  const summaryCSV = buildSummaryCSV(session, scores);
+    downloadCSV(`IAT_${session.participantId}.csv`, trialCSV);
+    setTimeout(() => {
+      downloadCSV(`IAT_summary_${session.orderCondition}_${session.participantId}.csv`, summaryCSV);
+    }, 1500);
 
-  downloadCSV(`IAT_${session.participantId}.csv`, trialCSV);
-  setTimeout(() => {
-    downloadCSV(`IAT_summary_${session.orderCondition}_${session.participantId}.csv`, summaryCSV);
-  }, 500);
-
-  document.getElementById('btn-download').disabled = true;
-  document.getElementById('done-msg').style.display = 'block';
+    document.getElementById('btn-download').disabled = true;
+    document.getElementById('done-msg').style.display = 'block';
+  } catch (e) {
+    alert('Download failed: ' + e.message);
+  }
 });
 
 </script>
