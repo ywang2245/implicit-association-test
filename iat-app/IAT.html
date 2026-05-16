@@ -1057,17 +1057,26 @@ function renderSurveyPage() {
 
 // ── Stereotype ratings ──────────────────────────────────────────
 function renderStereoPage(container, grp) {
-  const traits  = ['productive','efficient','focused','professional','reliable','motivated'];
+  const traits   = ['productive','efficient','focused','professional','reliable','motivated'];
   const grpLabel = grp === 'WFH' ? 'WFH Firms' : 'In-Office Firms';
+
+  const note = document.createElement('p');
+  note.style.margin = '0 0 8px 0';
+  note.style.fontSize = '1.15rem';
+  note.textContent = `Rate how well each word describes ${grpLabel}. (1 = least, 5 = most)`;
+  container.appendChild(note);
 
   const table = document.createElement('table');
   table.className = 'survey-table';
+  table.style.tableLayout = 'fixed';
+  table.style.width = '100%';
 
   const thead = table.createTHead();
   const hRow  = thead.insertRow();
-  ['', grpLabel + ' (1–5)'].forEach(h => {
+  [['', '40%'], [grpLabel, '60%']].forEach(([h, w]) => {
     const th = document.createElement('th');
     th.textContent = h;
+    th.style.width = w;
     hRow.appendChild(th);
   });
 
@@ -1080,19 +1089,21 @@ function renderStereoPage(container, grp) {
     const td = tr.insertCell();
     const group = document.createElement('div');
     group.style.display = 'flex';
-    group.style.gap = '8px';
+    group.style.gap = '16px';
     group.style.justifyContent = 'center';
     for (let v = 1; v <= 5; v++) {
       const label = document.createElement('label');
       label.style.display = 'flex';
       label.style.flexDirection = 'column';
       label.style.alignItems = 'center';
-      label.style.gap = '4px';
-      label.style.fontSize = '0.85rem';
+      label.style.gap = '6px';
+      label.style.fontSize = '1.1rem';
       const radio = document.createElement('input');
       radio.type  = 'radio';
       radio.name  = `stereo_${grp}_${trait}`;
       radio.value = v;
+      radio.style.width = '20px';
+      radio.style.height = '20px';
       label.appendChild(radio);
       label.append(String(v));
       group.appendChild(label);
