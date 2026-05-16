@@ -1116,61 +1116,55 @@ function renderStereoPage(container, grp) {
 // ── Favorability ────────────────────────────────────────────────
 function renderFavorPage(container) {
   const questions = [
-    { key: 'favor_WFH',    label: 'WFH firms' },
-    { key: 'favor_office', label: 'In-office firms' },
+    { key: 'favor_WFH',    label: 'How favorably do you feel toward WFH firms?' },
+    { key: 'favor_office', label: 'How favorably do you feel toward in-office firms?' },
   ];
-  const scaleLabels = ['1\nVery unfavorable', '2', '3', '4', '5\nVery favorable'];
 
-  const note = document.createElement('p');
-  note.style.margin = '0 0 8px 0';
-  note.style.fontSize = '1.15rem';
-  note.textContent = 'Rate how favorably you feel toward each. (1 = very unfavorable, 5 = very favorable)';
-  container.appendChild(note);
-
-  const table = document.createElement('table');
-  table.className = 'survey-table';
-  table.style.tableLayout = 'fixed';
-  table.style.width = '100%';
-
-  const thead = table.createTHead();
-  const hRow  = thead.insertRow();
-  [['', '40%'], ['1', '12%'], ['2', '12%'], ['3', '12%'], ['4', '12%'], ['5', '12%']].forEach(([h, w]) => {
-    const th = document.createElement('th');
-    th.textContent = h;
-    th.style.width = w;
-    hRow.appendChild(th);
-  });
-
-  const scaleNote = thead.insertRow();
-  const emptyTh = document.createElement('th');
-  scaleNote.appendChild(emptyTh);
-  const noteTh = document.createElement('th');
-  noteTh.colSpan = 5;
-  noteTh.style.fontSize = '1rem';
-  noteTh.style.fontWeight = 'normal';
-  noteTh.style.color = '#555';
-  noteTh.textContent = 'Very unfavorable  ←————————→  Very favorable';
-  scaleNote.appendChild(noteTh);
-
-  const tbody = table.createTBody();
   for (const { key, label } of questions) {
-    const tr = tbody.insertRow();
-    const tdLabel = tr.insertCell();
-    tdLabel.textContent = label;
+    const section = document.createElement('div');
+    section.style.display = 'flex';
+    section.style.flexDirection = 'column';
+    section.style.gap = '12px';
+
+    const q = document.createElement('p');
+    q.style.margin = '0';
+    q.style.fontSize = '1.15rem';
+    q.textContent = label;
+    section.appendChild(q);
+
+    const radioRow = document.createElement('div');
+    radioRow.style.display = 'flex';
+    radioRow.style.gap = '24px';
+    radioRow.style.alignItems = 'center';
 
     for (let v = 1; v <= 5; v++) {
-      const td = tr.insertCell();
-      td.style.textAlign = 'center';
+      const lbl = document.createElement('label');
+      lbl.style.display = 'flex';
+      lbl.style.flexDirection = 'column';
+      lbl.style.alignItems = 'center';
+      lbl.style.gap = '6px';
+      lbl.style.fontSize = '1.15rem';
       const radio = document.createElement('input');
       radio.type  = 'radio';
       radio.name  = key;
       radio.value = v;
       radio.style.width  = '20px';
       radio.style.height = '20px';
-      td.appendChild(radio);
+      lbl.appendChild(radio);
+      lbl.append(String(v));
+      radioRow.appendChild(lbl);
     }
+    section.appendChild(radioRow);
+
+    const hint = document.createElement('p');
+    hint.style.margin = '0';
+    hint.style.fontSize = '1rem';
+    hint.style.color = '#666';
+    hint.textContent = '1 = Very unfavorable,  5 = Very favorable';
+    section.appendChild(hint);
+
+    container.appendChild(section);
   }
-  container.appendChild(table);
 }
 
 // ── Comparative preference ──────────────────────────────────────
