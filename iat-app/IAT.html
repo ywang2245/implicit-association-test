@@ -633,11 +633,11 @@ function showInstructions(blockDef, onReady) {
 
   let body = '';
   if (blockDef.blockType === 'practice') {
-    body = 'Sort each word into the correct category as quickly and accurately as possible. Press E for left, I for right.';
+    body = 'Sort each word into the correct category as quickly and accurately as possible.<br>Press <strong>"E"</strong> for left, <strong>"I"</strong> for right.';
   } else {
-    body = 'Sort each word into the correct combined category as quickly and accurately as possible. Some words will belong to one of two categories on the same side.';
+    body = 'Sort each word into the correct combined category as quickly and accurately as possible. Some words will belong to one of two categories on the same side.<br>Press <strong>"E"</strong> for left, <strong>"I"</strong> for right.';
   }
-  document.getElementById('instr-body').textContent = body;
+  document.getElementById('instr-body').innerHTML = body;
   document.getElementById('instr-left-label').textContent  = `← ${blockDef.labelLeft.replace('\n', ' / ')}  (E)`;
   document.getElementById('instr-right-label').textContent = `(I)  ${blockDef.labelRight.replace('\n', ' / ')} →`;
 
