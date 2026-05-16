@@ -1022,7 +1022,7 @@ function buildSummaryCSV(session, scores) {
 const SURVEY_PAGES = [
   { id: 'stereo_wfh',    title: 'Please rate the following' },
   { id: 'stereo_office', title: 'Please rate the following' },
-  { id: 'favor',    title: 'Overall Favorability' },
+  { id: 'favor',    title: 'Please rate the following' },
   { id: 'compare',  title: 'Comparative Preference' },
   { id: 'paper',    title: 'Paper Review Scenario' },
   { id: 'demo',     title: 'About You' },
@@ -1115,44 +1115,62 @@ function renderStereoPage(container, grp) {
 
 // ── Favorability ────────────────────────────────────────────────
 function renderFavorPage(container) {
-  for (const { key, label } of [
-    { key: 'favor_WFH',    label: 'How favorably do you feel toward WFH firms?' },
-    { key: 'favor_office', label: 'How favorably do you feel toward in-office firms?' },
-  ]) {
-    const row = document.createElement('div');
-    row.className = 'form-row';
-    row.innerHTML = `<label>${label}</label>`;
+  const questions = [
+    { key: 'favor_WFH',    label: 'WFH firms' },
+    { key: 'favor_office', label: 'In-office firms' },
+  ];
+  const scaleLabels = ['1\nVery unfavorable', '2', '3', '4', '5\nVery favorable'];
 
-    const sliderRow = document.createElement('div');
-    sliderRow.className = 'slider-row';
+  const note = document.createElement('p');
+  note.style.margin = '0 0 8px 0';
+  note.style.fontSize = '1.15rem';
+  note.textContent = 'Rate how favorably you feel toward each. (1 = very unfavorable, 5 = very favorable)';
+  container.appendChild(note);
 
-    const slider = document.createElement('input');
-    slider.type = 'range'; slider.min = 0; slider.max = 10; slider.step = 1;
-    slider.id = key; slider.value = '';
-    slider.dataset.touched = 'false';
+  const table = document.createElement('table');
+  table.className = 'survey-table';
+  table.style.tableLayout = 'fixed';
+  table.style.width = '100%';
 
-    const valDisplay = document.createElement('span');
-    valDisplay.className = 'slider-val';
-    valDisplay.textContent = '—';
+  const thead = table.createTHead();
+  const hRow  = thead.insertRow();
+  [['', '40%'], ['1', '12%'], ['2', '12%'], ['3', '12%'], ['4', '12%'], ['5', '12%']].forEach(([h, w]) => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    th.style.width = w;
+    hRow.appendChild(th);
+  });
 
-    const labels = document.createElement('div');
-    labels.style.display = 'flex';
-    labels.style.justifyContent = 'space-between';
-    labels.style.fontSize = '0.8rem';
-    labels.style.color = '#666';
-    labels.innerHTML = '<span>0 = Very unfavorable</span><span>10 = Very favorable</span>';
+  const scaleNote = thead.insertRow();
+  const emptyTh = document.createElement('th');
+  scaleNote.appendChild(emptyTh);
+  const noteTh = document.createElement('th');
+  noteTh.colSpan = 5;
+  noteTh.style.fontSize = '1rem';
+  noteTh.style.fontWeight = 'normal';
+  noteTh.style.color = '#555';
+  noteTh.textContent = 'Very unfavorable  ←————————→  Very favorable';
+  scaleNote.appendChild(noteTh);
 
-    slider.addEventListener('input', () => {
-      slider.dataset.touched = 'true';
-      valDisplay.textContent = slider.value;
-    });
+  const tbody = table.createTBody();
+  for (const { key, label } of questions) {
+    const tr = tbody.insertRow();
+    const tdLabel = tr.insertCell();
+    tdLabel.textContent = label;
 
-    sliderRow.appendChild(slider);
-    sliderRow.appendChild(valDisplay);
-    row.appendChild(sliderRow);
-    row.appendChild(labels);
-    container.appendChild(row);
+    for (let v = 1; v <= 5; v++) {
+      const td = tr.insertCell();
+      td.style.textAlign = 'center';
+      const radio = document.createElement('input');
+      radio.type  = 'radio';
+      radio.name  = key;
+      radio.value = v;
+      radio.style.width  = '20px';
+      radio.style.height = '20px';
+      td.appendChild(radio);
+    }
   }
+  container.appendChild(table);
 }
 
 // ── Comparative preference ──────────────────────────────────────
@@ -1300,9 +1318,9 @@ function collectAndValidateSurveyPage() {
 
   if (page.id === 'favor') {
     for (const key of ['favor_WFH','favor_office']) {
-      const slider = document.getElementById(key);
-      if (slider.dataset.touched !== 'true') { err.classList.add('visible'); return false; }
-      sv[key] = Number(slider.value);
+      const sel = document.querySelector(`input[name="${key}"]:checked`);
+      if (!sel) { err.classList.add('visible'); return false; }
+      sv[key] = Number(sel.value);
     }
   }
 
