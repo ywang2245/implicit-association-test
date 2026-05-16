@@ -1185,6 +1185,7 @@ function renderComparePage(container) {
     const label = document.createElement('label');
     const radio = document.createElement('input');
     radio.type = 'radio'; radio.name = 'comparative_preference'; radio.value = opt.value;
+    radio.style.width = '20px'; radio.style.height = '20px';
     label.appendChild(radio);
     label.append(' ' + opt.label);
     group.appendChild(label);
@@ -1216,6 +1217,7 @@ function renderPaperPage(container) {
     const label = document.createElement('label');
     const radio = document.createElement('input');
     radio.type = 'radio'; radio.name = 'paper_review'; radio.value = opt.value;
+    radio.style.width = '20px'; radio.style.height = '20px';
     label.appendChild(radio);
     label.append(' ' + opt.label);
     group.appendChild(label);
@@ -1244,6 +1246,7 @@ function renderDemoPage(container) {
     const lbl = document.createElement('label');
     const r   = document.createElement('input');
     r.type = 'radio'; r.name = 'demo_gender'; r.value = g.toLowerCase().replace(/ /g,'_');
+    r.style.width = '20px'; r.style.height = '20px';
     lbl.appendChild(r); lbl.append(' ' + g);
     genderGroup.appendChild(lbl);
   }
@@ -1269,6 +1272,7 @@ function renderDemoPage(container) {
     const lbl = document.createElement('label');
     const r   = document.createElement('input');
     r.type = 'radio'; r.name = 'demo_stage'; r.value = s.toLowerCase().replace(/ /g,'_');
+    r.style.width = '20px'; r.style.height = '20px';
     lbl.appendChild(r); lbl.append(' ' + s);
     stageGroup.appendChild(lbl);
   }
@@ -1287,6 +1291,7 @@ function renderDemoPage(container) {
     const lbl = document.createElement('label');
     const r   = document.createElement('input');
     r.type = 'radio'; r.name = 'demo_mode'; r.value = m.toLowerCase().replace(/-/g,'_');
+    r.style.width = '20px'; r.style.height = '20px';
     lbl.appendChild(r); lbl.append(' ' + m);
     modeGroup.appendChild(lbl);
   }
