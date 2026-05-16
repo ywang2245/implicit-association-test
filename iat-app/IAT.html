@@ -1020,7 +1020,8 @@ function buildSummaryCSV(session, scores) {
    SURVEY
 ═══════════════════════════════════════════════════════════════ */
 const SURVEY_PAGES = [
-  { id: 'stereo',   title: 'Stereotype Ratings' },
+  { id: 'stereo_wfh',    title: 'Please rate the following' },
+  { id: 'stereo_office', title: 'Please rate the following' },
   { id: 'favor',    title: 'Overall Favorability' },
   { id: 'compare',  title: 'Comparative Preference' },
   { id: 'paper',    title: 'Paper Review Scenario' },
@@ -1046,7 +1047,8 @@ function renderSurveyPage() {
   const btn = document.getElementById('btn-survey-next');
   btn.textContent = surveyPageIdx < SURVEY_PAGES.length - 1 ? 'Next' : 'Finish & Download';
 
-  if (page.id === 'stereo')  renderStereoPage(container);
+  if (page.id === 'stereo_wfh')    renderStereoPage(container, 'WFH');
+  if (page.id === 'stereo_office') renderStereoPage(container, 'office');
   if (page.id === 'favor')   renderFavorPage(container);
   if (page.id === 'compare') renderComparePage(container);
   if (page.id === 'paper')   renderPaperPage(container);
@@ -1054,14 +1056,16 @@ function renderSurveyPage() {
 }
 
 // ── Stereotype ratings ──────────────────────────────────────────
-function renderStereoPage(container) {
-  const traits = ['productive','efficient','focused','professional','reliable','motivated'];
-  const table  = document.createElement('table');
+function renderStereoPage(container, grp) {
+  const traits  = ['productive','efficient','focused','professional','reliable','motivated'];
+  const grpLabel = grp === 'WFH' ? 'WFH Firms' : 'In-Office Firms';
+
+  const table = document.createElement('table');
   table.className = 'survey-table';
 
   const thead = table.createTHead();
   const hRow  = thead.insertRow();
-  ['Adjective','WFH Firms (1–5)','In-Office Firms (1–5)'].forEach(h => {
+  ['', grpLabel + ' (1–5)'].forEach(h => {
     const th = document.createElement('th');
     th.textContent = h;
     hRow.appendChild(th);
@@ -1073,29 +1077,27 @@ function renderStereoPage(container) {
     const tdLabel = tr.insertCell();
     tdLabel.textContent = trait.charAt(0).toUpperCase() + trait.slice(1);
 
-    for (const grp of ['WFH', 'office']) {
-      const td = tr.insertCell();
-      const group = document.createElement('div');
-      group.style.display = 'flex';
-      group.style.gap = '8px';
-      group.style.justifyContent = 'center';
-      for (let v = 1; v <= 5; v++) {
-        const label = document.createElement('label');
-        label.style.display = 'flex';
-        label.style.flexDirection = 'column';
-        label.style.alignItems = 'center';
-        label.style.gap = '4px';
-        label.style.fontSize = '0.85rem';
-        const radio = document.createElement('input');
-        radio.type  = 'radio';
-        radio.name  = `stereo_${grp}_${trait}`;
-        radio.value = v;
-        label.appendChild(radio);
-        label.append(String(v));
-        group.appendChild(label);
-      }
-      td.appendChild(group);
+    const td = tr.insertCell();
+    const group = document.createElement('div');
+    group.style.display = 'flex';
+    group.style.gap = '8px';
+    group.style.justifyContent = 'center';
+    for (let v = 1; v <= 5; v++) {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.flexDirection = 'column';
+      label.style.alignItems = 'center';
+      label.style.gap = '4px';
+      label.style.fontSize = '0.85rem';
+      const radio = document.createElement('input');
+      radio.type  = 'radio';
+      radio.name  = `stereo_${grp}_${trait}`;
+      radio.value = v;
+      label.appendChild(radio);
+      label.append(String(v));
+      group.appendChild(label);
     }
+    td.appendChild(group);
   }
   container.appendChild(table);
 }
@@ -1275,14 +1277,13 @@ function collectAndValidateSurveyPage() {
   const sv   = session.surveyData;
   const err  = document.getElementById('survey-error');
 
-  if (page.id === 'stereo') {
+  if (page.id === 'stereo_wfh' || page.id === 'stereo_office') {
+    const grp = page.id === 'stereo_wfh' ? 'WFH' : 'office';
     const traits = ['productive','efficient','focused','professional','reliable','motivated'];
     for (const trait of traits) {
-      for (const grp of ['WFH','office']) {
-        const sel = document.querySelector(`input[name="stereo_${grp}_${trait}"]:checked`);
-        if (!sel) { err.classList.add('visible'); return false; }
-        sv[`stereo_${grp}_${trait}`] = Number(sel.value);
-      }
+      const sel = document.querySelector(`input[name="stereo_${grp}_${trait}"]:checked`);
+      if (!sel) { err.classList.add('visible'); return false; }
+      sv[`stereo_${grp}_${trait}`] = Number(sel.value);
     }
   }
 
