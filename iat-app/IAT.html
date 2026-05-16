@@ -1359,6 +1359,20 @@ document.getElementById('btn-download').addEventListener('click', () => {
   }
 });
 
+/* ── Dev helper: goto(screen) or goto('survey', pageIndex) ── */
+window.goto = function(target, surveyPage) {
+  if (target === 'survey') {
+    session.endTimeIso = session.endTimeIso || new Date().toISOString();
+    surveyPageIdx = surveyPage || 0;
+    renderSurveyPage();
+    showScreen('screen-survey');
+  } else if (target === 'done') {
+    showScreen('screen-done');
+  } else {
+    showScreen(target);
+  }
+};
+
 </script>
 </body>
 </html>
