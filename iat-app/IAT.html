@@ -629,7 +629,7 @@ function advanceToNextBlock() {
 ═══════════════════════════════════════════════════════════════ */
 function showInstructions(blockDef, onReady) {
   document.getElementById('instr-title').textContent =
-    `Block ${blockDef.blockNumber} of 7 — ${blockDef.blockType === 'practice' ? 'Practice' : 'Test'}`;
+    `Block ${blockDef.blockNumber} of 7`;
 
   let body = '';
   if (blockDef.blockType === 'practice') {
