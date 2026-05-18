@@ -1055,7 +1055,7 @@ function renderSurveyPage() {
 // ── Stereotype ratings ──────────────────────────────────────────
 function renderStereoPage(container, grp) {
   const traits   = ['productive','efficient','focused','professional','reliable','motivated'];
-  const grpLabel = grp === 'WFH' ? 'WFH Firms' : 'In-Office Firms';
+  const grpLabel = grp === 'WFH' ? 'Working from Home (WFH)' : 'Working In-Office';
 
   const note = document.createElement('p');
   note.style.margin = '0 0 8px 0';
@@ -1113,8 +1113,8 @@ function renderStereoPage(container, grp) {
 // ── Favorability ────────────────────────────────────────────────
 function renderFavorPage(container) {
   const questions = [
-    { key: 'favor_WFH',    label: 'How favorably do you feel toward WFH firms?' },
-    { key: 'favor_office', label: 'How favorably do you feel toward in-office firms?' },
+    { key: 'favor_WFH',    label: 'How favorably do you feel toward working from home (WFH)?' },
+    { key: 'favor_office', label: 'How favorably do you feel toward working in-office?' },
   ];
 
   for (const { key, label } of questions) {
@@ -1167,11 +1167,11 @@ function renderFavorPage(container) {
 // ── Comparative preference ──────────────────────────────────────
 function renderComparePage(container) {
   const options = [
-    { value: 'strongly_prefer_office',   label: 'I strongly prefer in-office firms over WFH firms.' },
-    { value: 'moderately_prefer_office', label: 'I moderately prefer in-office firms over WFH firms.' },
+    { value: 'strongly_prefer_office',   label: 'I strongly prefer working in-office over WFH.' },
+    { value: 'moderately_prefer_office', label: 'I moderately prefer working in-office over WFH.' },
     { value: 'no_preference',            label: 'I have no preference between the two.' },
-    { value: 'moderately_prefer_WFH',    label: 'I moderately prefer WFH firms over in-office firms.' },
-    { value: 'strongly_prefer_WFH',      label: 'I strongly prefer WFH firms over in-office firms.' },
+    { value: 'moderately_prefer_WFH',    label: 'I moderately prefer WFH over working in-office.' },
+    { value: 'strongly_prefer_WFH',      label: 'I strongly prefer WFH over working in-office.' },
   ];
   const p = document.createElement('p');
   p.textContent = 'Which statement best describes your view?';
