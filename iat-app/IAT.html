@@ -1266,7 +1266,20 @@ function renderDemoPage(container) {
   // Industry / occupation
   const fieldRow = document.createElement('div');
   fieldRow.className = 'form-row';
-  fieldRow.innerHTML = `<label for="demo-field" style="font-weight:normal">Industry / Occupation</label><input type="text" id="demo-field" placeholder="e.g. Finance, Healthcare, Education" style="font-size:1.15rem">`;
+  fieldRow.innerHTML = '<label style="font-weight:normal">Industry / Occupation</label>';
+  fieldRow.appendChild(makeRadioGroup('demo_field', [
+    { val: 'academia',      label: 'Academia / Education' },
+    { val: 'technology',    label: 'Technology / IT' },
+    { val: 'finance',       label: 'Finance / Banking' },
+    { val: 'healthcare',    label: 'Healthcare / Medicine' },
+    { val: 'government',    label: 'Government / Public sector' },
+    { val: 'legal',         label: 'Legal' },
+    { val: 'media',         label: 'Media / Entertainment' },
+    { val: 'retail',        label: 'Retail / Sales' },
+    { val: 'manufacturing', label: 'Manufacturing' },
+    { val: 'nonprofit',     label: 'Non-profit' },
+    { val: 'other',         label: 'Other' },
+  ], true));
   container.appendChild(fieldRow);
 
   // Career level
@@ -1333,14 +1346,14 @@ function collectAndValidateSurveyPage() {
 
   if (page.id === 'demo') {
     const age   = document.getElementById('demo-age').value;
-    const field = document.getElementById('demo-field').value.trim();
+    const field  = document.querySelector('input[name="demo_field"]:checked');
     const gender = document.querySelector('input[name="demo_gender"]:checked');
     const stage  = document.querySelector('input[name="demo_stage"]:checked');
     const mode   = document.querySelector('input[name="demo_mode"]:checked');
     if (!age || !field || !gender || !stage || !mode) { err.classList.add('visible'); return false; }
     sv.age              = Number(age);
     sv.gender           = gender.value;
-    sv.primary_field    = field;
+    sv.primary_field    = field.value;
     sv.career_stage     = stage.value;
     sv.current_work_mode = mode.value;
   }
