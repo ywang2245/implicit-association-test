@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WFH vs In-Office IAT</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -922,21 +923,17 @@ function escapeCSV(val) {
   return s;
 }
 
-function buildTrialCSV(trialData, participantId, orderCondition) {
-  const headers = [
+function buildTrialRows(trialData, participantId, orderCondition) {
+  const keys = [
     'participant_id','order_condition','block_number','block_label','block_type',
     'trial_number_in_block','trial_id','stimulus','stimulus_category',
     'correct_key','first_response_key','first_response_correct',
     'rt_ms','total_trial_time_ms','timestamp_iso',
   ];
-  const rows = [headers.join(',')];
-  for (const t of trialData) {
-    rows.push(headers.map(h => escapeCSV(t[h])).join(','));
-  }
-  return rows.join('\n');
+  return trialData.map(t => Object.fromEntries(keys.map(k => [k, t[k] ?? ''])));
 }
 
-function buildSummaryCSV(session, scores) {
+function buildSummaryRow(session, scores) {
   const pid   = session.participantId;
   const order = session.orderCondition;
   const dur   = session.endTimeIso
@@ -1013,8 +1010,7 @@ function buildSummaryCSV(session, scores) {
     current_work_mode:         sv.current_work_mode         ?? '',
   };
 
-  const headers = Object.keys(row);
-  return [headers.join(','), headers.map(h => escapeCSV(row[h])).join(',')].join('\n');
+  return row;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1448,14 +1444,15 @@ function showDoneScreen() {
 
 document.getElementById('btn-download').addEventListener('click', () => {
   try {
-    const scores = computeDScores(session.trialData, session.orderCondition);
-    const trialCSV   = buildTrialCSV(session.trialData, session.participantId, session.orderCondition);
-    const summaryCSV = buildSummaryCSV(session, scores);
+    const scores     = computeDScores(session.trialData, session.orderCondition);
+    const trialRows  = buildTrialRows(session.trialData, session.participantId, session.orderCondition);
+    const summaryRow = buildSummaryRow(session, scores);
 
-    downloadCSV(`IAT_${session.participantId}.csv`, trialCSV);
-    setTimeout(() => {
-      downloadCSV(`IAT_summary_${session.orderCondition}_${session.participantId}.csv`, summaryCSV);
-    }, 1500);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trialRows),   'Trial Data');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([summaryRow]), 'Summary');
+
+    XLSX.writeFile(wb, `IAT_${session.participantId}.xlsx`);
 
     document.getElementById('btn-download').disabled = true;
     document.getElementById('done-msg').style.display = 'block';
