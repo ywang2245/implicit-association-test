@@ -1226,76 +1226,72 @@ function renderPaperPage(container) {
 }
 
 // ── Demographics ────────────────────────────────────────────────
+function makeRadioGroup(name, options, inline) {
+  const group = document.createElement('div');
+  group.className = 'radio-group';
+  if (inline) { group.style.flexDirection = 'row'; group.style.flexWrap = 'wrap'; group.style.gap = '16px'; }
+  for (const { val, label } of options) {
+    const lbl = document.createElement('label');
+    const r   = document.createElement('input');
+    r.type = 'radio'; r.name = name; r.value = val;
+    r.style.width = '20px'; r.style.height = '20px';
+    lbl.appendChild(r); lbl.append(' ' + label);
+    group.appendChild(lbl);
+  }
+  return group;
+}
+
 function renderDemoPage(container) {
+  container.style.gap = '32px';
+
   // Age
   const ageRow = document.createElement('div');
   ageRow.className = 'form-row';
-  ageRow.innerHTML = `<label for="demo-age">Age</label><input type="number" id="demo-age" min="18" max="100" placeholder="e.g. 35" style="max-width:120px">`;
+  ageRow.style.fontWeight = 'normal';
+  ageRow.innerHTML = `<label for="demo-age" style="font-weight:normal">Age</label><input type="number" id="demo-age" min="18" max="100" placeholder="e.g. 35" style="max-width:120px; font-size:1.15rem">`;
   container.appendChild(ageRow);
 
   // Gender
   const genderRow = document.createElement('div');
   genderRow.className = 'form-row';
-  genderRow.innerHTML = '<label>Gender</label>';
-  const genderGroup = document.createElement('div');
-  genderGroup.className = 'radio-group';
-  genderGroup.style.flexDirection = 'row';
-  genderGroup.style.flexWrap = 'wrap';
-  genderGroup.style.gap = '16px';
-  for (const g of ['Female','Male','Non-binary','Prefer not to say']) {
-    const lbl = document.createElement('label');
-    const r   = document.createElement('input');
-    r.type = 'radio'; r.name = 'demo_gender'; r.value = g.toLowerCase().replace(/ /g,'_');
-    r.style.width = '20px'; r.style.height = '20px';
-    lbl.appendChild(r); lbl.append(' ' + g);
-    genderGroup.appendChild(lbl);
-  }
-  genderRow.appendChild(genderGroup);
+  genderRow.innerHTML = '<label style="font-weight:normal">Gender</label>';
+  genderRow.appendChild(makeRadioGroup('demo_gender', [
+    { val: 'female',          label: 'Female' },
+    { val: 'male',            label: 'Male' },
+    { val: 'non_binary',      label: 'Non-binary' },
+    { val: 'prefer_not_say',  label: 'Prefer not to say' },
+  ], true));
   container.appendChild(genderRow);
 
-  // Primary field
+  // Industry / occupation
   const fieldRow = document.createElement('div');
   fieldRow.className = 'form-row';
-  fieldRow.innerHTML = `<label for="demo-field">Primary Field</label><input type="text" id="demo-field" placeholder="e.g. Management, Economics">`;
+  fieldRow.innerHTML = `<label for="demo-field" style="font-weight:normal">Industry / Occupation</label><input type="text" id="demo-field" placeholder="e.g. Finance, Healthcare, Education" style="font-size:1.15rem">`;
   container.appendChild(fieldRow);
 
-  // Career stage
+  // Career level
   const stageRow = document.createElement('div');
   stageRow.className = 'form-row';
-  stageRow.innerHTML = '<label>Career Stage</label>';
-  const stageGroup = document.createElement('div');
-  stageGroup.className = 'radio-group';
-  stageGroup.style.flexDirection = 'row';
-  stageGroup.style.flexWrap = 'wrap';
-  stageGroup.style.gap = '16px';
-  for (const s of ['PhD student','Postdoc','Assistant Prof','Associate Prof','Full Prof','Other']) {
-    const lbl = document.createElement('label');
-    const r   = document.createElement('input');
-    r.type = 'radio'; r.name = 'demo_stage'; r.value = s.toLowerCase().replace(/ /g,'_');
-    r.style.width = '20px'; r.style.height = '20px';
-    lbl.appendChild(r); lbl.append(' ' + s);
-    stageGroup.appendChild(lbl);
-  }
-  stageRow.appendChild(stageGroup);
+  stageRow.innerHTML = '<label style="font-weight:normal">Career Level</label>';
+  stageRow.appendChild(makeRadioGroup('demo_stage', [
+    { val: 'student',    label: 'Student' },
+    { val: 'entry',      label: 'Entry level (0–5 years)' },
+    { val: 'mid',        label: 'Mid level (6–15 years)' },
+    { val: 'senior',     label: 'Senior (15+ years)' },
+    { val: 'manager',    label: 'Manager / Executive' },
+    { val: 'other',      label: 'Other' },
+  ], true));
   container.appendChild(stageRow);
 
   // Work mode
   const modeRow = document.createElement('div');
   modeRow.className = 'form-row';
-  modeRow.innerHTML = '<label>Your current work is primarily:</label>';
-  const modeGroup = document.createElement('div');
-  modeGroup.className = 'radio-group';
-  modeGroup.style.flexDirection = 'row';
-  modeGroup.style.gap = '16px';
-  for (const m of ['In-office','Hybrid','WFH']) {
-    const lbl = document.createElement('label');
-    const r   = document.createElement('input');
-    r.type = 'radio'; r.name = 'demo_mode'; r.value = m.toLowerCase().replace(/-/g,'_');
-    r.style.width = '20px'; r.style.height = '20px';
-    lbl.appendChild(r); lbl.append(' ' + m);
-    modeGroup.appendChild(lbl);
-  }
-  modeRow.appendChild(modeGroup);
+  modeRow.innerHTML = '<label style="font-weight:normal">Your current work arrangement:</label>';
+  modeRow.appendChild(makeRadioGroup('demo_mode', [
+    { val: 'in_office', label: 'In-office' },
+    { val: 'hybrid',    label: 'Hybrid' },
+    { val: 'wfh',       label: 'Work from home' },
+  ], true));
   container.appendChild(modeRow);
 }
 
