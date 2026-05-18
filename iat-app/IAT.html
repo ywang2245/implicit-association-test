@@ -1465,12 +1465,23 @@ document.getElementById('btn-download').addEventListener('click', () => {
 });
 
 /* ── Dev helper: goto(screen) or goto('survey', pageIndex) ── */
-window.goto = function(target, surveyPage) {
+window.goto = function(target, index) {
   if (target === 'survey') {
     session.endTimeIso = session.endTimeIso || new Date().toISOString();
-    surveyPageIdx = surveyPage || 0;
+    surveyPageIdx = index || 0;
     renderSurveyPage();
     showScreen('screen-survey');
+  } else if (target === 'block') {
+    if (!session.blockSequence) {
+      session.blockSequence = buildBlockSequence(session.orderCondition);
+    }
+    const blockIdx = (index || 1) - 1;
+    session.currentBlockIdx = blockIdx;
+    showInstructions(session.blockSequence[blockIdx], () => {
+      runBlock(session.blockSequence[blockIdx], (records) => {
+        session.trialData = session.trialData.concat(records);
+      });
+    });
   } else if (target === 'done') {
     showScreen('screen-done');
   } else {
