@@ -1008,6 +1008,7 @@ function buildSummaryCSV(session, scores) {
     age:                       sv.age                       ?? '',
     gender:                    sv.gender                    ?? '',
     primary_field:             sv.primary_field             ?? '',
+    education:                 sv.education                 ?? '',
     career_stage:              sv.career_stage              ?? '',
     current_work_mode:         sv.current_work_mode         ?? '',
   };
@@ -1300,6 +1301,21 @@ function renderDemoPage(container) {
   ]));
   container.appendChild(fieldRow);
 
+  // Education
+  const eduRow = document.createElement('div');
+  eduRow.className = 'form-row';
+  eduRow.innerHTML = '<label for="demo-edu" style="font-weight:normal">Highest Education Degree</label>';
+  eduRow.appendChild(makeSelect('demo-edu', [
+    { val: '',             label: '— Please select —' },
+    { val: 'high_school',  label: 'High school / GED' },
+    { val: 'associate',    label: "Associate's degree" },
+    { val: 'bachelor',     label: "Bachelor's degree" },
+    { val: 'master',       label: "Master's degree" },
+    { val: 'doctorate',    label: 'Doctorate (PhD, MD, JD, etc.)' },
+    { val: 'other',        label: 'Other' },
+  ]));
+  container.appendChild(eduRow);
+
   // Career level
   const stageRow = document.createElement('div');
   stageRow.className = 'form-row';
@@ -1368,12 +1384,14 @@ function collectAndValidateSurveyPage() {
     const age    = document.getElementById('demo-age').value;
     const gender = document.getElementById('demo-gender').value;
     const field  = document.getElementById('demo-field').value;
+    const edu    = document.getElementById('demo-edu').value;
     const stage  = document.getElementById('demo-stage').value;
     const mode   = document.getElementById('demo-mode').value;
-    if (!age || !gender || !field || !stage || !mode) { err.classList.add('visible'); return false; }
+    if (!age || !gender || !field || !edu || !stage || !mode) { err.classList.add('visible'); return false; }
     sv.age               = Number(age);
     sv.gender            = gender;
     sv.primary_field     = field;
+    sv.education         = edu;
     sv.career_stage      = stage;
     sv.current_work_mode = mode;
   }
