@@ -1242,6 +1242,23 @@ function makeRadioGroup(name, options, inline) {
   return group;
 }
 
+function addOtherField(row, selectEl, otherId) {
+  const input = document.createElement('input');
+  input.type = 'text'; input.id = otherId;
+  input.placeholder = 'Please specify';
+  input.style.fontSize = '1.15rem';
+  input.style.padding = '6px 10px';
+  input.style.border = '1px solid #bbb';
+  input.style.borderRadius = '4px';
+  input.style.maxWidth = '360px';
+  input.style.display = 'none';
+  input.style.marginTop = '8px';
+  row.appendChild(input);
+  selectEl.addEventListener('change', () => {
+    input.style.display = selectEl.value === 'other' ? 'block' : 'none';
+  });
+}
+
 function makeSelect(id, options) {
   const sel = document.createElement('select');
   if (id) sel.id = id;
@@ -1285,7 +1302,7 @@ function renderDemoPage(container) {
   const fieldRow = document.createElement('div');
   fieldRow.className = 'form-row';
   fieldRow.innerHTML = '<label for="demo-field" style="font-weight:normal">Industry / Occupation</label>';
-  fieldRow.appendChild(makeSelect('demo-field', [
+  const fieldSel = makeSelect('demo-field', [
     { val: '',              label: '— Please select —' },
     { val: 'academia',      label: 'Academia / Education' },
     { val: 'technology',    label: 'Technology / IT' },
@@ -1298,14 +1315,16 @@ function renderDemoPage(container) {
     { val: 'manufacturing', label: 'Manufacturing' },
     { val: 'nonprofit',     label: 'Non-profit' },
     { val: 'other',         label: 'Other' },
-  ]));
+  ]);
+  fieldRow.appendChild(fieldSel);
+  addOtherField(fieldRow, fieldSel, 'demo-field-other');
   container.appendChild(fieldRow);
 
   // Education
   const eduRow = document.createElement('div');
   eduRow.className = 'form-row';
   eduRow.innerHTML = '<label for="demo-edu" style="font-weight:normal">Highest Education Degree</label>';
-  eduRow.appendChild(makeSelect('demo-edu', [
+  const eduSel = makeSelect('demo-edu', [
     { val: '',             label: '— Please select —' },
     { val: 'high_school',  label: 'High school / GED' },
     { val: 'associate',    label: "Associate's degree" },
@@ -1313,14 +1332,16 @@ function renderDemoPage(container) {
     { val: 'master',       label: "Master's degree" },
     { val: 'doctorate',    label: 'Doctorate (PhD, MD, JD, etc.)' },
     { val: 'other',        label: 'Other' },
-  ]));
+  ]);
+  eduRow.appendChild(eduSel);
+  addOtherField(eduRow, eduSel, 'demo-edu-other');
   container.appendChild(eduRow);
 
   // Career level
   const stageRow = document.createElement('div');
   stageRow.className = 'form-row';
   stageRow.innerHTML = '<label for="demo-stage" style="font-weight:normal">Career Level</label>';
-  stageRow.appendChild(makeSelect('demo-stage', [
+  const stageSel = makeSelect('demo-stage', [
     { val: '',        label: '— Please select —' },
     { val: 'student', label: 'Student' },
     { val: 'entry',   label: 'Entry level (0–5 years)' },
@@ -1328,7 +1349,9 @@ function renderDemoPage(container) {
     { val: 'senior',  label: 'Senior (15+ years)' },
     { val: 'manager', label: 'Manager / Executive' },
     { val: 'other',   label: 'Other' },
-  ]));
+  ]);
+  stageRow.appendChild(stageSel);
+  addOtherField(stageRow, stageSel, 'demo-stage-other');
   container.appendChild(stageRow);
 
   // Work mode
@@ -1387,12 +1410,18 @@ function collectAndValidateSurveyPage() {
     const edu    = document.getElementById('demo-edu').value;
     const stage  = document.getElementById('demo-stage').value;
     const mode   = document.getElementById('demo-mode').value;
+    const fieldOther = document.getElementById('demo-field-other').value.trim();
+    const eduOther   = document.getElementById('demo-edu-other').value.trim();
+    const stageOther = document.getElementById('demo-stage-other').value.trim();
     if (!age || !gender || !field || !edu || !stage || !mode) { err.classList.add('visible'); return false; }
+    if (field === 'other' && !fieldOther) { err.classList.add('visible'); return false; }
+    if (edu   === 'other' && !eduOther)   { err.classList.add('visible'); return false; }
+    if (stage === 'other' && !stageOther) { err.classList.add('visible'); return false; }
     sv.age               = Number(age);
     sv.gender            = gender;
-    sv.primary_field     = field;
-    sv.education         = edu;
-    sv.career_stage      = stage;
+    sv.primary_field     = field === 'other' ? fieldOther : field;
+    sv.education         = edu   === 'other' ? eduOther   : edu;
+    sv.career_stage      = stage === 'other' ? stageOther : stage;
     sv.current_work_mode = mode;
   }
 
