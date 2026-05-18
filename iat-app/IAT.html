@@ -1241,40 +1241,50 @@ function makeRadioGroup(name, options, inline) {
   return group;
 }
 
+function makeSelect(id, options) {
+  const sel = document.createElement('select');
+  if (id) sel.id = id;
+  sel.style.fontSize = '1.15rem';
+  sel.style.padding = '6px 10px';
+  sel.style.borderRadius = '4px';
+  sel.style.border = '1px solid #bbb';
+  sel.style.maxWidth = '360px';
+  for (const { val, label } of options) {
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    if (!val) { opt.disabled = true; opt.selected = true; }
+    sel.appendChild(opt);
+  }
+  return sel;
+}
+
 function renderDemoPage(container) {
   container.style.gap = '32px';
 
   // Age
   const ageRow = document.createElement('div');
   ageRow.className = 'form-row';
-  ageRow.style.fontWeight = 'normal';
   ageRow.innerHTML = `<label for="demo-age" style="font-weight:normal">Age</label><input type="number" id="demo-age" min="18" max="100" placeholder="e.g. 35" style="max-width:120px; font-size:1.15rem">`;
   container.appendChild(ageRow);
 
   // Gender
   const genderRow = document.createElement('div');
   genderRow.className = 'form-row';
-  genderRow.innerHTML = '<label style="font-weight:normal">Gender</label>';
-  genderRow.appendChild(makeRadioGroup('demo_gender', [
-    { val: 'female',          label: 'Female' },
-    { val: 'male',            label: 'Male' },
-    { val: 'non_binary',      label: 'Non-binary' },
-    { val: 'prefer_not_say',  label: 'Prefer not to say' },
-  ], true));
+  genderRow.innerHTML = '<label for="demo-gender" style="font-weight:normal">Gender</label>';
+  genderRow.appendChild(makeSelect('demo-gender', [
+    { val: '', label: '— Please select —' },
+    { val: 'female',         label: 'Female' },
+    { val: 'male',           label: 'Male' },
+    { val: 'non_binary',     label: 'Non-binary' },
+    { val: 'prefer_not_say', label: 'Prefer not to say' },
+  ]));
   container.appendChild(genderRow);
 
   // Industry / occupation
   const fieldRow = document.createElement('div');
   fieldRow.className = 'form-row';
   fieldRow.innerHTML = '<label for="demo-field" style="font-weight:normal">Industry / Occupation</label>';
-  const fieldSelect = document.createElement('select');
-  fieldSelect.id = 'demo-field';
-  fieldSelect.style.fontSize = '1.15rem';
-  fieldSelect.style.padding = '6px 10px';
-  fieldSelect.style.borderRadius = '4px';
-  fieldSelect.style.border = '1px solid #bbb';
-  fieldSelect.style.maxWidth = '360px';
-  for (const { val, label } of [
+  fieldRow.appendChild(makeSelect('demo-field', [
     { val: '',              label: '— Please select —' },
     { val: 'academia',      label: 'Academia / Education' },
     { val: 'technology',    label: 'Technology / IT' },
@@ -1287,38 +1297,34 @@ function renderDemoPage(container) {
     { val: 'manufacturing', label: 'Manufacturing' },
     { val: 'nonprofit',     label: 'Non-profit' },
     { val: 'other',         label: 'Other' },
-  ]) {
-    const opt = document.createElement('option');
-    opt.value = val; opt.textContent = label;
-    if (!val) opt.disabled = true;
-    fieldSelect.appendChild(opt);
-  }
-  fieldRow.appendChild(fieldSelect);
+  ]));
   container.appendChild(fieldRow);
 
   // Career level
   const stageRow = document.createElement('div');
   stageRow.className = 'form-row';
-  stageRow.innerHTML = '<label style="font-weight:normal">Career Level</label>';
-  stageRow.appendChild(makeRadioGroup('demo_stage', [
-    { val: 'student',    label: 'Student' },
-    { val: 'entry',      label: 'Entry level (0–5 years)' },
-    { val: 'mid',        label: 'Mid level (6–15 years)' },
-    { val: 'senior',     label: 'Senior (15+ years)' },
-    { val: 'manager',    label: 'Manager / Executive' },
-    { val: 'other',      label: 'Other' },
-  ], true));
+  stageRow.innerHTML = '<label for="demo-stage" style="font-weight:normal">Career Level</label>';
+  stageRow.appendChild(makeSelect('demo-stage', [
+    { val: '',        label: '— Please select —' },
+    { val: 'student', label: 'Student' },
+    { val: 'entry',   label: 'Entry level (0–5 years)' },
+    { val: 'mid',     label: 'Mid level (6–15 years)' },
+    { val: 'senior',  label: 'Senior (15+ years)' },
+    { val: 'manager', label: 'Manager / Executive' },
+    { val: 'other',   label: 'Other' },
+  ]));
   container.appendChild(stageRow);
 
   // Work mode
   const modeRow = document.createElement('div');
   modeRow.className = 'form-row';
-  modeRow.innerHTML = '<label style="font-weight:normal">Your current work arrangement:</label>';
-  modeRow.appendChild(makeRadioGroup('demo_mode', [
+  modeRow.innerHTML = '<label for="demo-mode" style="font-weight:normal">Your current work arrangement:</label>';
+  modeRow.appendChild(makeSelect('demo-mode', [
+    { val: '',          label: '— Please select —' },
     { val: 'in_office', label: 'In-office' },
     { val: 'hybrid',    label: 'Hybrid' },
     { val: 'wfh',       label: 'Work from home' },
-  ], true));
+  ]));
   container.appendChild(modeRow);
 }
 
@@ -1359,18 +1365,17 @@ function collectAndValidateSurveyPage() {
   }
 
   if (page.id === 'demo') {
-    const age   = document.getElementById('demo-age').value;
-    const fieldEl = document.getElementById('demo-field');
-    const field   = fieldEl && fieldEl.value ? fieldEl : null;
-    const gender = document.querySelector('input[name="demo_gender"]:checked');
-    const stage  = document.querySelector('input[name="demo_stage"]:checked');
-    const mode   = document.querySelector('input[name="demo_mode"]:checked');
-    if (!age || !field || !gender || !stage || !mode) { err.classList.add('visible'); return false; }
-    sv.age              = Number(age);
-    sv.gender           = gender.value;
-    sv.primary_field    = fieldEl.value;
-    sv.career_stage     = stage.value;
-    sv.current_work_mode = mode.value;
+    const age    = document.getElementById('demo-age').value;
+    const gender = document.getElementById('demo-gender').value;
+    const field  = document.getElementById('demo-field').value;
+    const stage  = document.getElementById('demo-stage').value;
+    const mode   = document.getElementById('demo-mode').value;
+    if (!age || !gender || !field || !stage || !mode) { err.classList.add('visible'); return false; }
+    sv.age               = Number(age);
+    sv.gender            = gender;
+    sv.primary_field     = field;
+    sv.career_stage      = stage;
+    sv.current_work_mode = mode;
   }
 
   return true;
