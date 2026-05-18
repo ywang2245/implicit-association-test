@@ -1266,8 +1266,16 @@ function renderDemoPage(container) {
   // Industry / occupation
   const fieldRow = document.createElement('div');
   fieldRow.className = 'form-row';
-  fieldRow.innerHTML = '<label style="font-weight:normal">Industry / Occupation</label>';
-  fieldRow.appendChild(makeRadioGroup('demo_field', [
+  fieldRow.innerHTML = '<label for="demo-field" style="font-weight:normal">Industry / Occupation</label>';
+  const fieldSelect = document.createElement('select');
+  fieldSelect.id = 'demo-field';
+  fieldSelect.style.fontSize = '1.15rem';
+  fieldSelect.style.padding = '6px 10px';
+  fieldSelect.style.borderRadius = '4px';
+  fieldSelect.style.border = '1px solid #bbb';
+  fieldSelect.style.maxWidth = '360px';
+  for (const { val, label } of [
+    { val: '',              label: '— Please select —' },
     { val: 'academia',      label: 'Academia / Education' },
     { val: 'technology',    label: 'Technology / IT' },
     { val: 'finance',       label: 'Finance / Banking' },
@@ -1279,7 +1287,13 @@ function renderDemoPage(container) {
     { val: 'manufacturing', label: 'Manufacturing' },
     { val: 'nonprofit',     label: 'Non-profit' },
     { val: 'other',         label: 'Other' },
-  ], true));
+  ]) {
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    if (!val) opt.disabled = true;
+    fieldSelect.appendChild(opt);
+  }
+  fieldRow.appendChild(fieldSelect);
   container.appendChild(fieldRow);
 
   // Career level
@@ -1346,14 +1360,15 @@ function collectAndValidateSurveyPage() {
 
   if (page.id === 'demo') {
     const age   = document.getElementById('demo-age').value;
-    const field  = document.querySelector('input[name="demo_field"]:checked');
+    const fieldEl = document.getElementById('demo-field');
+    const field   = fieldEl && fieldEl.value ? fieldEl : null;
     const gender = document.querySelector('input[name="demo_gender"]:checked');
     const stage  = document.querySelector('input[name="demo_stage"]:checked');
     const mode   = document.querySelector('input[name="demo_mode"]:checked');
     if (!age || !field || !gender || !stage || !mode) { err.classList.add('visible'); return false; }
     sv.age              = Number(age);
     sv.gender           = gender.value;
-    sv.primary_field    = field.value;
+    sv.primary_field    = fieldEl.value;
     sv.career_stage     = stage.value;
     sv.current_work_mode = mode.value;
   }
